@@ -1,0 +1,25 @@
+[package]
+edition = "2021"
+name = "depot"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bidiff = "1.0.0"
+byteorder = "1.4.3"
+chrono = "0.4.24"
+itertools = "0.10.5"
+neoncore = {git = "https://github.com/neonimp/neoncore?branch=master"}
+postcard = "1.0.4"
+readonly = "0.2.5"
+seahash = "4.1.0"
+sha2 = "0.10.6"
+zstd = {version = "0.12.3+zstd.1.5.2", features = ["zstdmt"]}
+
+[features]
+default = []
+ffi = []
