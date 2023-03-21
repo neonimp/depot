@@ -193,7 +193,7 @@ fn ls_contents(path: &PathBuf) {
     let dh = DepotHandle::open_file(path, depot::depot_handle::OpenMode::Read).unwrap();
     let streams: Vec<_> = dh.streams().collect();
     for stream in streams {
-        println!("{} {:#?}", stream.0, stream.1);
+        println!("{}, compressed size: {}, size: {}, ratio: {:.2}%", stream.0, stream.1.stream_size, stream.1.size, stream.1.stream_size as f64 / stream.1.size as f64);
     }
 }
 

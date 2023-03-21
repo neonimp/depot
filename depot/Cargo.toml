@@ -6,6 +6,11 @@ version = "0.1.0"
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
+[profile.release]
+lto = true
+opt-level = 3
+strip = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

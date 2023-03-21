@@ -1,5 +1,5 @@
-use crate::depot_handle::{SeekRead, SeekWrite};
 use chrono::{NaiveTime, TimeZone};
+use neoncore::streams::{SeekWrite, SeekRead};
 use seahash::SeaHasher;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hasher;
