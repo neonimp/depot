@@ -1,17 +1,18 @@
 use seahash::SeaHasher;
 use std::fmt::Debug;
 use std::fs::OpenOptions;
-use std::hash::{Hasher};
-use std::io::{BufReader, Cursor, ErrorKind, Read, Seek, SeekFrom, Write, Error};
+use std::hash::Hasher;
+use std::io::{BufReader, Cursor, Error, ErrorKind, Read, Seek, SeekFrom, Write};
+use std::mem::size_of;
 use std::path::Path;
 use std::{fs, vec};
 
 use crate::helpers::{De, Ser, TsWithTz};
 use crate::MAGIC;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use neoncore::streams::read::{read_format, read_lpstr};
+use neoncore::streams::read::{read_lpstr, read_pattern};
 use neoncore::streams::write::{write_lpstr, write_values};
-use neoncore::streams::{AnyInt, Endianness, LPWidth, SeekRead, SeekWrite, SeekReadWrite};
+use neoncore::streams::{AnyInt, Endianness, LPWidth, SeekRead, SeekReadWrite, SeekWrite};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
@@ -69,7 +70,7 @@ impl De for DepotToc {
         Self: Sized,
     {
         let format = "!Wqq";
-        let read = read_format(&mut stream, format)?;
+        let read = read_pattern(&mut stream, format)?;
 
         let mut toc = DepotToc {
             compression_level: read[0].try_into().unwrap(),
@@ -167,7 +168,7 @@ impl De for EntryInfo {
         Self: Sized,
     {
         let format = "!qqqqqqq";
-        let read = read_format(&mut stream, format)?;
+        let read = read_pattern(&mut stream, format)?;
         Ok(Self {
             offset: read[0].try_into().unwrap(),
             size: read[1].try_into().unwrap(),
@@ -179,7 +180,6 @@ impl De for EntryInfo {
         })
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub(crate) struct DepotMetadata {
@@ -233,6 +233,7 @@ impl<'io> DepotHandle<'io> {
         // write the header with a bogus toc offset
         // of !0(16Eb)
         header.ser(&mut handle)?;
+        handle.seek(SeekFrom::Start(size_of::<DepotHeader>() as u64))?;
 
         Ok(Self {
             metadata: DepotMetadata { header, toc },
@@ -354,7 +355,7 @@ impl<'io> DepotHandle<'io> {
         compressor.multithread(self.mt_threads as u32)?;
 
         let mut buf = vec![0; self.compression_frame_size];
-        let mut writen = 0;
+        let mut written = 0;
 
         while let Ok(n) = reader.read(&mut buf) {
             if n == 0 {
@@ -362,9 +363,9 @@ impl<'io> DepotHandle<'io> {
             }
             compressor.write_all(&buf[..n])?;
             hasher.write(&buf[..n]);
-            writen += n;
+            written += n;
             if let Some(progress) = &mut progress {
-                progress(writen as u64, size);
+                progress(written as u64, size);
             }
         }
 
@@ -476,8 +477,8 @@ impl<'io> DepotHandle<'io> {
     /// This is a convenience function for extract_stream
     pub fn stream_to_memory(&mut self, stream: &StreamInfo) -> Result<Vec<u8>, Error> {
         let mut buf = Vec::new();
-        let mut cusor = Cursor::new(&mut buf);
-        self.extract_stream(stream, &mut cusor)?;
+        let mut cursor = Cursor::new(&mut buf);
+        self.extract_stream(stream, &mut cursor)?;
         Ok(buf)
     }
 

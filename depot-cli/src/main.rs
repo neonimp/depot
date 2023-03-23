@@ -8,7 +8,7 @@ use std::{
 };
 
 use clap::Parser;
-use depot::depot_handle::DepotHandle;
+use depot_core::depot_handle::DepotHandle;
 
 const PACKAGE: Emoji<'_, '_> = Emoji("📦 ", "[||] ");
 
@@ -124,13 +124,13 @@ fn main() {
                 args.path.display()
             );
             let dh =
-                DepotHandle::open_file(&args.path, depot::depot_handle::OpenMode::Read).unwrap();
+                DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read).unwrap();
             let toc = dh.get_toc();
             println!("{:#?}", toc);
         }
         Action::Show(cmd_args) => {
             let mut dh =
-                DepotHandle::open_file(&args.path, depot::depot_handle::OpenMode::Read).unwrap();
+                DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read).unwrap();
             for item in &cmd_args.streams {
                 let stream = dh.get_named_stream(&item.to_string_lossy()).unwrap();
                 let contents = dh.stream_to_memory(&stream).unwrap();
@@ -145,13 +145,13 @@ fn main() {
 }
 
 fn carve_files(path: &PathBuf, streams: &[PathBuf], output: &PathBuf) {
-    let dh = DepotHandle::open_file(path, depot::depot_handle::OpenMode::Read).unwrap();
-    let mut dhfh = OpenOptions::new()
+    let dh = DepotHandle::open_file(path, depot_core::depot_handle::OpenMode::Read).unwrap();
+    let mut dh_file = OpenOptions::new()
         .read(true)
         .write(true)
         .open(path)
         .unwrap();
-    let mut bufr = std::io::BufReader::new(&mut dhfh);
+    let mut bufrd = std::io::BufReader::new(&mut dh_file);
     if output.exists() {
         fs::remove_dir_all(output).unwrap();
     }
@@ -166,12 +166,12 @@ fn carve_files(path: &PathBuf, streams: &[PathBuf], output: &PathBuf) {
         ));
         let mut fh = File::create(outf).unwrap();
         let mut writer = std::io::BufWriter::new(&mut fh);
-        bufr.seek(std::io::SeekFrom::Start(stream.einf.offset))
+        bufrd.seek(std::io::SeekFrom::Start(stream.einf.offset))
             .unwrap();
         let mut buf = vec![0; stream.einf.stream_size as usize];
         println!("reading {} bytes", buf.len());
         let mut read = 0;
-        while let Ok(n) = bufr.read(&mut buf) {
+        while let Ok(n) = bufrd.read(&mut buf) {
             if read + n > stream.einf.stream_size as usize {
                 writer
                     .write_all(buf[..stream.einf.stream_size as usize - read].as_ref())
@@ -185,20 +185,27 @@ fn carve_files(path: &PathBuf, streams: &[PathBuf], output: &PathBuf) {
             writer.write_all(&buf[..n]).unwrap();
             read += n;
         }
+
         println!("carved `{}`", stream.name);
     }
 }
 
 fn ls_contents(path: &PathBuf) {
-    let dh = DepotHandle::open_file(path, depot::depot_handle::OpenMode::Read).unwrap();
+    let dh = DepotHandle::open_file(path, depot_core::depot_handle::OpenMode::Read).unwrap();
     let streams: Vec<_> = dh.streams().collect();
     for stream in streams {
-        println!("{}, compressed size: {}, size: {}, ratio: {:.2}%", stream.0, stream.1.stream_size, stream.1.size, stream.1.stream_size as f64 / stream.1.size as f64);
+        println!(
+            "{}, compressed size: {}, size: {}, ratio: {:.2}%",
+            stream.0,
+            stream.1.stream_size,
+            stream.1.size,
+            stream.1.stream_size as f64 / stream.1.size as f64
+        );
     }
 }
 
 fn extract_files(depot_path: &PathBuf, paths: &Vec<PathBuf>, output: &PathBuf) {
-    let mut dh = DepotHandle::open_file(depot_path, depot::depot_handle::OpenMode::Read).unwrap();
+    let mut dh = DepotHandle::open_file(depot_path, depot_core::depot_handle::OpenMode::Read).unwrap();
     for path in paths {
         let stream = dh.get_named_stream(&path.to_string_lossy()).unwrap();
         fs::create_dir_all(output.join(path.parent().unwrap())).unwrap();
@@ -219,7 +226,7 @@ fn new_depot(
     let fh = File::create(path)?;
     let pb = indicatif::ProgressBar::new(files.len() as u64);
     pb.set_style(indicatif::ProgressStyle::default_bar().template(
-        "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}",
+        "{spinner:.green} [{elapsed_precise}] [{bar:40.red/blue}] {pos:>7}/{len:7} \n {msg}",
     )?);
     let mut dh = DepotHandle::create(fh)?;
     dh.set_comp_level(level);
@@ -228,10 +235,10 @@ fn new_depot(
     dh.flush()?;
     for path in files {
         pb.inc(1);
-        let display = path.display();
+        let display = path.display().to_string();
         let size = fs::metadata(&path)?.len();
-        let formated_size = humansize::format_size(size, BINARY);
-        let msg = format!("{} ({})", display, formated_size);
+        let formatted_size = humansize::format_size(size, BINARY);
+        let msg = format!("{} ({})", &display, formatted_size);
         pb.set_message(msg);
         dh.add_file(path, None)?;
     }
@@ -239,10 +246,10 @@ fn new_depot(
     Ok(())
 }
 
-fn expand_path(pathl: Vec<PathBuf>, recurse: bool) -> Vec<PathBuf> {
+fn expand_path(in_paths: Vec<PathBuf>, recurse: bool) -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
-    for path in pathl {
+    for path in in_paths {
         if !path.exists() {
             eprintln!("path `{}` does not exist", path.display());
             exit(1)
@@ -280,8 +287,4 @@ fn expand_path(pathl: Vec<PathBuf>, recurse: bool) -> Vec<PathBuf> {
     }
 
     paths
-}
-
-fn update_progress(total: u64, current: u64) {
-    print!("\r{}/{}", current / 1048576, total / 1048576)
 }

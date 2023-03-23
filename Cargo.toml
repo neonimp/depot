@@ -1,5 +1,5 @@
 [workspace]
 members = [
-	"depot",
+	"depot-core",
 	"depot-cli",
 ]

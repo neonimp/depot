@@ -1,5 +1,5 @@
-pub use neoncore::streams::{SeekRead, SeekWrite};
 use neoncore::const_fn::ascii_to_u64_be;
+pub use neoncore::streams::{SeekRead, SeekWrite};
 
 pub mod depot_handle;
 mod helpers;

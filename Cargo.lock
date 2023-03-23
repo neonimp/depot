@@ -289,7 +289,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "depot"
+name = "depot-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "console",
+ "depot-core",
+ "glob",
+ "humansize",
+ "indicatif",
+]
+
+[[package]]
+name = "depot-core"
 version = "0.1.0"
 dependencies = [
  "bidiff",
@@ -302,18 +314,6 @@ dependencies = [
  "seahash",
  "sha2",
  "zstd",
-]
-
-[[package]]
-name = "depot-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "console",
- "depot",
- "glob",
- "humansize",
- "indicatif",
 ]
 
 [[package]]
@@ -592,8 +592,9 @@ dependencies = [
 
 [[package]]
 name = "neoncore"
-version = "2.0.0"
-source = "git+https://github.com/neonimp/neoncore?branch=master#d794dad25c606d6b4f4bf0725a1e4ff35ebd01b5"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa6b78a7e2070aacf2b28a7cd496cf94327572d49ea02fc133ef2260e403c9af"
 dependencies = [
  "byteorder",
  "paste",

@@ -16,7 +16,7 @@ A depot stream can happen anywhere in a file or stream like a network socket. Th
 ## A depot header
 A magic number 64bit which is the string `DEPOTARC` this is used to find a the header amidst a stream of data and to identify a possibly valid file.
 
-A supported spec versionfor this file is a 16bit integer, this is used to identify the version of the spec this file is using. This is used to identify if the file is valid or not for a given parser.
+A supported spec version for this file is a 16bit integer, this is used to identify the version of the spec this file is using. This is used to identify if the file is valid or not for a given parser.
 
 64bit toc offset, this is the offset of the table of contents from the header.
 

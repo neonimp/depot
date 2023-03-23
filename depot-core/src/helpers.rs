@@ -1,8 +1,6 @@
 use chrono::{NaiveTime, TimeZone};
-use neoncore::streams::{SeekWrite, SeekRead};
-use seahash::SeaHasher;
+use neoncore::streams::{SeekRead, SeekWrite};
 use std::fmt::{Debug, Formatter};
-use std::hash::Hasher;
 
 pub(crate) trait Ser {
     fn ser<S: SeekWrite>(&self, stream: S) -> Result<u64, std::io::Error>;
@@ -58,16 +56,4 @@ impl Debug for TsWithTz {
         }
         write!(f, "Invalid timestamp")
     }
-}
-
-pub(crate) fn hash<S: SeekRead>(mut stream: S) -> u64 {
-    let mut hasher = SeaHasher::new();
-    let mut buf = [0u8; 8192];
-    while let Ok(n) = stream.read(&mut buf) {
-        if n == 0 {
-            break;
-        }
-        hasher.write(&buf[..n]);
-    }
-    hasher.finish()
 }
