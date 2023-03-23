@@ -123,14 +123,15 @@ fn main() {
                 PACKAGE,
                 args.path.display()
             );
-            let dh =
-                DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read).unwrap();
+            let dh = DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read)
+                .unwrap();
             let toc = dh.get_toc();
             println!("{:#?}", toc);
         }
         Action::Show(cmd_args) => {
             let mut dh =
-                DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read).unwrap();
+                DepotHandle::open_file(&args.path, depot_core::depot_handle::OpenMode::Read)
+                    .unwrap();
             for item in &cmd_args.streams {
                 let stream = dh.get_named_stream(&item.to_string_lossy()).unwrap();
                 let contents = dh.stream_to_memory(&stream).unwrap();
@@ -166,7 +167,8 @@ fn carve_files(path: &PathBuf, streams: &[PathBuf], output: &PathBuf) {
         ));
         let mut fh = File::create(outf).unwrap();
         let mut writer = std::io::BufWriter::new(&mut fh);
-        bufrd.seek(std::io::SeekFrom::Start(stream.einf.offset))
+        bufrd
+            .seek(std::io::SeekFrom::Start(stream.einf.offset))
             .unwrap();
         let mut buf = vec![0; stream.einf.stream_size as usize];
         println!("reading {} bytes", buf.len());
@@ -205,7 +207,8 @@ fn ls_contents(path: &PathBuf) {
 }
 
 fn extract_files(depot_path: &PathBuf, paths: &Vec<PathBuf>, output: &PathBuf) {
-    let mut dh = DepotHandle::open_file(depot_path, depot_core::depot_handle::OpenMode::Read).unwrap();
+    let mut dh =
+        DepotHandle::open_file(depot_path, depot_core::depot_handle::OpenMode::Read).unwrap();
     for path in paths {
         let stream = dh.get_named_stream(&path.to_string_lossy()).unwrap();
         fs::create_dir_all(output.join(path.parent().unwrap())).unwrap();
